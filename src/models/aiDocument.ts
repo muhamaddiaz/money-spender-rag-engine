@@ -12,8 +12,7 @@ async function trainProcess(content: string) {
             const embedding = await generateEmbedding(chunk.pageContent);
 
             return {
-                content: chunk.pageContent,
-                embedding: embedding
+                content: chunk.pageContent, embedding: embedding
             };
         })
     )

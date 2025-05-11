@@ -20,10 +20,30 @@ export async function generateEmbedding(text: string, input_type: 'query' | 'doc
     return normalizeVector(embedding);
 }
 
+export async function rerankDocuments(query: string, documents: string[]) {
+    try {
+        if (!query || documents.length === 0) return [];
+
+        const reranking = await vo.rerank({
+            query,
+            documents,
+            model: "rerank-2",
+            topK: 3,
+            returnDocuments: true,
+        });
+
+        return reranking.data;
+    } catch (error) {
+        console.error("Error in reranking:", error);
+        throw error;
+    }
+}
+
 export async function chunkDocument(content: string) {
     const textSplitter = new RecursiveCharacterTextSplitter({
-        chunkSize: 250,
-        chunkOverlap: 35,
+        chunkSize: 500,
+        chunkOverlap: 50,
+        separators: ["\n\n", "\n", ". ", "! ", "? ", ";", ":", " ", ""]
     });
 
     return await textSplitter.createDocuments([content]);

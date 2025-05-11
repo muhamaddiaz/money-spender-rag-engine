@@ -1,7 +1,7 @@
 import path from 'path';
 
 import {NextFunction, Request, Response} from "express";
-import {arrayToVector, generateEmbedding} from "../utils/embedding";
+import {arrayToVector, generateEmbedding, rerankDocuments} from "../utils/embedding";
 import { readFileSync } from "fs";
 import {trainProcess} from "../models/aiDocument";
 import {connectToSupabase} from "../config/supabase";
@@ -33,7 +33,7 @@ export const getEmbeddings = async (req: Request, res: Response, next: NextFunct
 export const postSearch = async (req: Request, res: Response, next: NextFunction) => {
     let client;
     try {
-        const { query, limit = 5, threshold = 0.1 } = req.body;
+        const { query, limit = 3, threshold = 0.4 } = req.body;
 
         if (!query || typeof query !== 'string') {
             return res.status(400).json({ error: 'Query must be a non-empty string' });
@@ -73,8 +73,10 @@ export const postSearch = async (req: Request, res: Response, next: NextFunction
           LIMIT $3
         `, [arrayToVector(embed), numThreshold, numLimit]);
 
+        const rerankedDocs = await rerankDocuments(input, result.rows.map(row => row.content))
+
         res.json({
-            data: result.rows,
+            data: rerankedDocs,
             message: 'Success'
         });
     } catch (error) {
